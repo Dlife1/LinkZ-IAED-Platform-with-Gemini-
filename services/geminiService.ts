@@ -125,8 +125,10 @@ export const sendMessageToGemini = async (
   attachments: { image?: UploadedFile, audio?: UploadedFile }
 ) => {
   const apiKey = process.env.API_KEY || "";
-  // In the web container, assume api key is injected or handled. 
-  // If not, we cannot proceed.
+  
+  if (!apiKey) {
+    console.warn("API Key is missing. Requests will likely fail.");
+  }
   
   // We initialize new client per request to ensure latest config (e.g. key from context if we had it)
   const ai = new GoogleGenAI({ apiKey });
@@ -188,8 +190,6 @@ export const sendMessageToGemini = async (
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: tools,
         temperature: 0.4,
-        // Explicitly enable thinking for Gemini 2.5 Flash to improve strategic reasoning
-        thinkingConfig: { thinkingBudget: 2048 },
       }
     });
 
