@@ -135,6 +135,44 @@ const App = () => {
     return () => unsubscribe();
   }, [userId]);
 
+  // --- Autonomous Lock Framework Logic ---
+  useEffect(() => {
+    // Calculate Lock State based on Metrics
+    const metrics = contextData;
+    const isSynergy = metrics.synergyScore >= 0.9;
+    const isCompliance = metrics.ddexCompliance === 'Verified';
+    const isSRM = metrics.srmStatus === 'Secure';
+    const isA11y = metrics.accessibilityState.screenReaderApi === 'Active';
+    
+    let derivedState: 'LOCKED' | 'ARMED' | 'DEPLOYED' = 'LOCKED';
+    
+    if (metrics.distributionStatus.includes('Live')) {
+        derivedState = 'DEPLOYED';
+    } else if (isSynergy && isCompliance && isSRM && isA11y) {
+        derivedState = 'ARMED';
+    }
+    
+    // Only update if changed to avoid infinite loop with log updates
+    if (derivedState !== metrics.lockState) {
+        // Use functional update to ensure we don't overwrite concurrent changes
+        setContextData(prev => ({ ...prev, lockState: derivedState }));
+        
+        // Log the state change (separate from setContextData to avoid closure issues, although addSystemLog handles it)
+        // We defer this log slightly to ensure state is settled or just log it directly
+        // Note: We cannot call addSystemLog here if it depends on contextData which we just set.
+        // But addSystemLog uses functional update, so it's safe.
+        // However, updating state inside useEffect that depends on state is tricky.
+        // We will skip logging here to be safe and rely on the UI update.
+    }
+  }, [
+      contextData.synergyScore, 
+      contextData.ddexCompliance, 
+      contextData.srmStatus, 
+      contextData.accessibilityState.screenReaderApi, 
+      contextData.distributionStatus,
+      // Do NOT include contextData.lockState
+  ]);
+
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -590,9 +628,14 @@ const App = () => {
                                     </div>
                                     <button 
                                         onClick={() => executeMandateAction(msg.mandate!)}
-                                        className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-4 py-2 rounded-lg text-xs tracking-wider transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                                        disabled={contextData.lockState === 'LOCKED'}
+                                        className={`px-4 py-2 rounded-lg text-xs tracking-wider transition-all font-bold ${
+                                            contextData.lockState === 'LOCKED' 
+                                            ? 'bg-slate-700 text-slate-400 cursor-not-allowed border border-slate-600'
+                                            : 'bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                                        }`}
                                     >
-                                        EXECUTE
+                                        {contextData.lockState === 'LOCKED' ? 'LOCKED' : 'EXECUTE'}
                                     </button>
                                 </div>
                             </div>

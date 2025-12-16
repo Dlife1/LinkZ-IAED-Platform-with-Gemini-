@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { 
-  Activity, Globe, Lock, Music, Target, Zap, AlertTriangle, FileText, Tag, User, Hash, Sparkles, Mic2, TrendingUp, ShieldCheck, Accessibility, Wifi, CreditCard
+  Activity, Globe, Lock, Music, Target, Zap, AlertTriangle, FileText, Tag, User, Hash, Sparkles, Mic2, TrendingUp, ShieldCheck, Accessibility, Wifi, CreditCard, Unlock, ShieldAlert
 } from 'lucide-react';
 import { ContextData, SystemLog } from '../types';
 
@@ -62,10 +62,10 @@ const CardLogo = ({ className }: { className?: string }) => (
 );
 
 // --- Ignition Card Component ---
-const IgnitionCard = ({ balance, name, onClick }: { balance: number, name: string, onClick?: () => void }) => (
+const IgnitionCard = ({ balance, name, onClick, disabled }: { balance: number, name: string, onClick?: () => void, disabled: boolean }) => (
   <div 
-    onClick={onClick}
-    className="relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-2xl group select-none transition-all duration-500 hover:scale-[1.02] hover:shadow-cyan-900/20 perspective-1000 cursor-pointer"
+    onClick={!disabled ? onClick : undefined}
+    className={`relative w-full aspect-[1.586/1] rounded-xl overflow-hidden shadow-2xl group select-none transition-all duration-500 perspective-1000 ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-cyan-900/20 cursor-pointer'}`}
   >
     {/* Background Layers */}
     <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0c1220] to-slate-950 border border-slate-700/50 z-0"></div>
@@ -76,7 +76,7 @@ const IgnitionCard = ({ balance, name, onClick }: { balance: number, name: strin
     </div>
     
     {/* Holographic Sweep */}
-    <div className="absolute -top-[100%] -left-[100%] w-[300%] h-[300%] bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 z-10 pointer-events-none"></div>
+    {!disabled && <div className="absolute -top-[100%] -left-[100%] w-[300%] h-[300%] bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 z-10 pointer-events-none"></div>}
 
     {/* Content */}
     <div className="absolute inset-0 p-4 flex flex-col justify-between z-20">
@@ -102,7 +102,7 @@ const IgnitionCard = ({ balance, name, onClick }: { balance: number, name: strin
                 </div>
             </div>
             <Wifi className="w-6 h-6 text-slate-500/50 rotate-90" />
-            <div className="ml-auto bg-green-500/20 border border-green-500/40 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+            <div className={`ml-auto bg-green-500/20 border border-green-500/40 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-md opacity-0 ${!disabled && 'group-hover:opacity-100'} transition-opacity flex items-center gap-1`}>
                 TAP TO WALLET <CreditCard className="w-3 h-3" />
             </div>
         </div>
@@ -132,8 +132,49 @@ const IgnitionCard = ({ balance, name, onClick }: { balance: number, name: strin
   </div>
 );
 
-// --- Vector Radar Chart ---
+// --- Autonomous Lock Monitor ---
+const LockMonitor = ({ state }: { state: 'LOCKED' | 'ARMED' | 'DEPLOYED' }) => {
+    const isLocked = state === 'LOCKED';
+    const isArmed = state === 'ARMED';
+    const isDeployed = state === 'DEPLOYED';
 
+    return (
+        <div className={`
+            relative overflow-hidden rounded-xl border p-3 flex items-center justify-between transition-all duration-500
+            ${isLocked ? 'bg-red-950/20 border-red-900/50' : isArmed ? 'bg-yellow-950/20 border-yellow-600/50' : 'bg-green-950/20 border-green-500/50'}
+        `}>
+            {/* Scanline BG */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]"></div>
+            
+            <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg border ${
+                    isLocked ? 'bg-red-900/20 border-red-500/30' : isArmed ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-green-500/20 border-green-500/50'
+                }`}>
+                    {isLocked && <Lock className="w-5 h-5 text-red-500" />}
+                    {isArmed && <ShieldAlert className="w-5 h-5 text-yellow-500 animate-pulse" />}
+                    {isDeployed && <Unlock className="w-5 h-5 text-green-500" />}
+                </div>
+                <div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Autonomous Lock Framework</div>
+                    <div className={`text-sm font-bold tracking-tight ${
+                        isLocked ? 'text-red-500' : isArmed ? 'text-yellow-500' : 'text-green-400'
+                    }`}>
+                        {state}
+                    </div>
+                </div>
+            </div>
+            
+            {/* Status Indicators */}
+            <div className="flex gap-1">
+                <div className={`w-1.5 h-6 rounded-full ${isLocked ? 'bg-red-500 animate-pulse' : 'bg-red-900/30'}`}></div>
+                <div className={`w-1.5 h-6 rounded-full ${isArmed ? 'bg-yellow-500 animate-pulse' : 'bg-yellow-900/30'}`}></div>
+                <div className={`w-1.5 h-6 rounded-full ${isDeployed ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-green-900/30'}`}></div>
+            </div>
+        </div>
+    );
+};
+
+// --- Vector Radar Chart ---
 const VectorRadar = ({ data }: { data: ContextData }) => {
     // Normalize values to 0-1 range
     const metrics = [
@@ -158,6 +199,7 @@ const VectorRadar = ({ data }: { data: ContextData }) => {
 
     const polyPoints = metrics.map((m, i) => getCoordinates(m.value, i)).join(" ");
     const fullPolyPoints = metrics.map((m, i) => getCoordinates(1, i)).join(" ");
+    const lockColor = data.lockState === 'LOCKED' ? '#ef4444' : data.lockState === 'ARMED' ? '#eab308' : '#22d3ee';
 
     return (
         <div className="relative w-full aspect-square flex items-center justify-center bg-slate-950/50 rounded-xl border border-slate-800/50 overflow-hidden group">
@@ -179,8 +221,8 @@ const VectorRadar = ({ data }: { data: ContextData }) => {
                 {/* Data Polygon */}
                 <polygon 
                     points={polyPoints} 
-                    fill="rgba(6,182,212,0.2)" 
-                    stroke="#22d3ee" 
+                    fill={`${lockColor}33`} 
+                    stroke={lockColor} 
                     strokeWidth="2" 
                     className="drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] transition-all duration-1000 ease-out"
                 />
@@ -308,7 +350,7 @@ export const StatusRadar: React.FC<Props> = ({ data, onOpenPayout, onOpenProfile
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-cyan-400 animate-pulse" />
-            <h3 className="text-sm font-bold text-cyan-100 uppercase tracking-widest">Command Center</h3>
+            <h3 className="text-sm font-bold text-cyan-100 uppercase tracking-widest">ASDP V3.1</h3>
         </div>
         <div 
             onClick={onOpenProfile}
@@ -318,6 +360,9 @@ export const StatusRadar: React.FC<Props> = ({ data, onOpenPayout, onOpenProfile
              {userDisplayName ? userDisplayName.toUpperCase() : 'PROFILE'}
         </div>
       </div>
+
+      {/* Lock Monitor */}
+      <LockMonitor state={data.lockState} />
 
       {/* Primary Visualization: Vector Radar */}
       <VectorRadar data={data} />
@@ -367,11 +412,12 @@ export const StatusRadar: React.FC<Props> = ({ data, onOpenPayout, onOpenProfile
         />
       </div>
 
-      {/* AP2 Ignition Card (Replaces basic Equity Counter) */}
+      {/* AP2 Ignition Card */}
       <IgnitionCard 
          balance={data.projectedEquity} 
          name={userDisplayName || (data.metadata.artist !== 'Unknown Artist' ? data.metadata.artist : 'LINKZ CREATOR')} 
          onClick={onOpenPayout}
+         disabled={data.lockState === 'LOCKED'}
       />
 
       {/* Rollout Module */}

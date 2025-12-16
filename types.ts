@@ -38,6 +38,7 @@ export interface ContextData {
   metadata: AssetMetadata;
   systemLogs: SystemLog[];
   projectedEquity: number;
+  lockState: 'LOCKED' | 'ARMED' | 'DEPLOYED';
 }
 
 export interface MessagePart {
