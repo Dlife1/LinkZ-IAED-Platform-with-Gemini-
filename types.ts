@@ -22,6 +22,14 @@ export interface AccessibilityState {
   wcagScore: number;
 }
 
+export interface AuraProfile {
+  active: boolean;
+  releaseId?: string;
+  ddexProfile?: string;
+  e2eScope?: string;
+  blockchainTag?: string;
+}
+
 export interface ContextData {
   currentAssetId: string;
   assetName: string;
@@ -39,6 +47,7 @@ export interface ContextData {
   systemLogs: SystemLog[];
   projectedEquity: number;
   lockState: 'LOCKED' | 'ARMED' | 'DEPLOYED';
+  auraProfile: AuraProfile;
 }
 
 export interface MessagePart {

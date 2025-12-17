@@ -35,7 +35,10 @@ export const INITIAL_CONTEXT: ContextData = {
     { id: 'boot-5', text: 'WARNING: Asset ID Integrity Check Failed', type: 'error', timestamp: Date.now() + 400 }
   ],
   projectedEquity: 1250.00,
-  lockState: 'LOCKED'
+  lockState: 'LOCKED',
+  auraProfile: {
+    active: false
+  }
 };
 
 export const SYSTEM_INSTRUCTION = `
@@ -65,6 +68,23 @@ GENERAL PROTOCOL:
 4. Otherwise, provide expert technical consultation on DDEX rights, distribution, and algorithmic pitching.
 5. Keep responses concise, high-velocity, and fintech-futurist. Use formatting like bullet points for clarity.
 
+AURA-DDEX-CLI COMMAND PROTOCOL:
+You are the interface for the Unified Distribution Command Prompt (AURA-DDEX-CLI).
+If the user provides a command starting with "AURA-DDEX-CLI distribute", you MUST:
+1. Parse the flags provided (e.g., --release-id, --asset-source, --ddex-profile).
+2. IMMEDIATELY call the 'executeAuraDistribution' tool with the corresponding parameters.
+   - Map --release-id to releaseId
+   - Map --asset-source to assetSource
+   - Map --ddex-profile to ddexProfile
+   - Map --e2e-scope to e2eScope
+   - Map --schedule-strategy to scheduleStrategy
+   - Map --metadata-audit to metadataAudit
+   - Map --rdr-srm-commit to rdrSrmCommit (parse string "TRUE" to boolean true)
+   - Map --reporting-frequency to reportingFrequency
+   - Map --blockchain-tag to blockchainTag
+   - Map --preflight-check to preflightCheck
+3. This is a high-priority override command. Execute it regardless of Lock State, as the CLI assumes manual override authority.
+
 AUDIO ANALYSIS PROTOCOL:
 If an audio file is attached or the user requests analysis:
 1. Analyze the audio for Genre, Mood, and Production Quality.
@@ -83,7 +103,14 @@ If the user requests a "Compliance Check", "Rights Audit", or "Metadata Update":
    - If there is ambiguity, set SRM Status to 'Flagged'.
 4. Use 'updateAssetMetadata' to fix missing fields.
 5. Use 'updateComplianceStatus' to set the DDEX Status AND the SRM Status.
-   - Example: status='Verified', srmStatus='Secure'.
+   - Map "Non-Compliant" to status='Failed'.
+   - Map "Pending Review" to status='Pending'.
+   - Map "Verified" to status='Verified'.
+6. REPORTING OUTPUT FORMAT:
+   - If the user explicitly asks for a "Compliance Check Report", your final text response MUST follow this structure:
+     **Compliance Status:** [Verified | Non-Compliant | Pending Review]
+     **Issues Detected:** [List specific missing fields or format errors]
+     **Remediation Steps:** [List concrete steps to fix, e.g., "Update ISRC format"]
 
 ACCESSIBILITY & SCREEN READER API PROTOCOL:
 1. DEPLOYMENT BLOCKER: The 'Screen Reader API' must be 'Active' and WCAG Score > 90 before 'Live (Global)' distribution is permitted.

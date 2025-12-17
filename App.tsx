@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Send, Loader2, Image as ImageIcon, Music, Shield, Radio, X, Link, Check, ExternalLink, User
+  Send, Loader2, Image as ImageIcon, Music, Shield, Radio, X, Link, Check, ExternalLink, User, Terminal, ShieldCheck
 } from 'lucide-react';
 import { GenerateContentResponse } from '@google/genai';
 
@@ -156,13 +156,6 @@ const App = () => {
     if (derivedState !== metrics.lockState) {
         // Use functional update to ensure we don't overwrite concurrent changes
         setContextData(prev => ({ ...prev, lockState: derivedState }));
-        
-        // Log the state change (separate from setContextData to avoid closure issues, although addSystemLog handles it)
-        // We defer this log slightly to ensure state is settled or just log it directly
-        // Note: We cannot call addSystemLog here if it depends on contextData which we just set.
-        // But addSystemLog uses functional update, so it's safe.
-        // However, updating state inside useEffect that depends on state is tricky.
-        // We will skip logging here to be safe and rely on the UI update.
     }
   }, [
       contextData.synergyScore, 
@@ -460,6 +453,35 @@ const App = () => {
               }
               contextUpdated = true;
               transactionExecuted = true;
+          } else if (fc.name === 'executeAuraDistribution') {
+              const args = fc.args as any;
+              newContextData = {
+                  ...newContextData,
+                  currentAssetId: args.releaseId || newContextData.currentAssetId,
+                  distributionStatus: 'Live (Global)',
+                  synergyScore: 1.0, // Force max synergy for manual override
+                  srmStatus: 'Secure',
+                  ddexCompliance: 'Verified',
+                  pitchingStatus: 'Active (Editorial)',
+                  auraProfile: {
+                      active: true,
+                      releaseId: args.releaseId,
+                      ddexProfile: args.ddexProfile,
+                      e2eScope: args.e2eScope,
+                      blockchainTag: args.blockchainTag
+                  }
+              };
+              
+              // Simulate CLI logs
+              newLogs.push({ id: crypto.randomUUID(), text: `AURA-DDEX-CLI: Initializing E2E Workflow...`, type: 'info', timestamp: Date.now() });
+              newLogs.push({ id: crypto.randomUUID(), text: `Connecting SFTP: ${args.assetSource?.substring(0,25)}...`, type: 'info', timestamp: Date.now() + 100 });
+              newLogs.push({ id: crypto.randomUUID(), text: `DDEX Profile Loaded: ${args.ddexProfile}`, type: 'info', timestamp: Date.now() + 200 });
+              newLogs.push({ id: crypto.randomUUID(), text: `Audit: ${args.metadataAudit} [PASSED]`, type: 'success', timestamp: Date.now() + 300 });
+              newLogs.push({ id: crypto.randomUUID(), text: `Provenance: ${args.blockchainTag} [MINTED]`, type: 'success', timestamp: Date.now() + 400 });
+              newLogs.push({ id: crypto.randomUUID(), text: `DISTRIBUTION DEPLOYED: ${args.e2eScope}`, type: 'success', timestamp: Date.now() + 500 });
+              
+              contextUpdated = true;
+              transactionExecuted = true;
           }
         }
       }
@@ -499,6 +521,14 @@ const App = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const insertAuraTemplate = () => {
+      setInput('AURA-DDEX-CLI distribute --release-id "R_2025_ZDW_NGR" --asset-source "sftp://secure.aura-supply.com/releases/next_rapgod_v4" --ddex-profile ERN_4.3:AMAZON_PREMIUM:CUSTOM_V1 --e2e-scope GLOBAL_TIER1 --schedule-strategy SMART_WATERFALL:T8W --metadata-audit ENABLE:AI_SEMANTIC_CHECK --rdr-srm-commit TRUE --reporting-frequency DAILY_SYNCHRONOUS --blockchain-tag ENABLE:PROVENANCE_V2 --preflight-check FULL_DSP_COMPLIANCE');
+  };
+
+  const insertComplianceTemplate = () => {
+    setInput('Perform a DDEX compliance check on the uploaded asset. Report the compliance status (e.g., Verified, Non-Compliant, Pending Review) and provide specific details on any identified issues. If the asset is non-compliant, explain the nature of the violation and suggest immediate remediation steps.');
   };
 
   return (
@@ -666,6 +696,28 @@ const App = () => {
             <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-end gap-3">
                 {/* Tools */}
                 <div className="flex gap-2 pb-1">
+                    {/* AURA CLI Quick Action */}
+                    <button
+                        type="button"
+                        onClick={insertAuraTemplate}
+                        disabled={isLoading}
+                        title="Open Unified Distribution Command Prompt"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all border bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-orange-400 hover:border-orange-500/50"
+                    >
+                        <Terminal className="w-4 h-4" />
+                    </button>
+
+                    {/* Compliance Audit Quick Action */}
+                    <button
+                        type="button"
+                        onClick={insertComplianceTemplate}
+                        disabled={isLoading}
+                        title="Run Compliance Audit"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all border bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-green-400 hover:border-green-500/50"
+                    >
+                        <ShieldCheck className="w-5 h-5" />
+                    </button>
+
                     {/* Audio Upload */}
                     <div className="relative group">
                          <input 
@@ -727,9 +779,9 @@ const App = () => {
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder={audioFile || imageFile ? "Add strategic context..." : "Enter command or query..."}
+                        placeholder={audioFile || imageFile ? "Add strategic context..." : "Enter command..."}
                         disabled={isLoading}
-                        className="w-full h-12 bg-slate-800/50 border border-slate-700 rounded-xl pl-4 pr-12 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                        className="w-full h-12 bg-slate-800/50 border border-slate-700 rounded-xl pl-4 pr-12 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-mono"
                     />
                     <button 
                         type="submit"

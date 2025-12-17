@@ -118,6 +118,28 @@ const manageAccessibilityTool: FunctionDeclaration = {
   }
 };
 
+// New Tool for AURA-DDEX-CLI
+const executeAuraDistributionTool: FunctionDeclaration = {
+  name: 'executeAuraDistribution',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Executes the AURA-DDEX-CLI distribution workflow. Maps command flags to E2E distribution parameters.',
+    properties: {
+      releaseId: { type: Type.STRING, description: 'Unique release identifier (e.g. R_2025_...)' },
+      assetSource: { type: Type.STRING, description: 'SFTP path for assets.' },
+      ddexProfile: { type: Type.STRING, description: 'DDEX standard profile string.' },
+      e2eScope: { type: Type.STRING, description: 'Distribution target scope (e.g. GLOBAL_TIER1).' },
+      scheduleStrategy: { type: Type.STRING, description: 'Release schedule strategy (e.g. SMART_WATERFALL).' },
+      metadataAudit: { type: Type.STRING, description: 'Audit mode (e.g. ENABLE:AI_SEMANTIC_CHECK).' },
+      rdrSrmCommit: { type: Type.BOOLEAN, description: 'Commit to Repertoire & Rights systems.' },
+      reportingFrequency: { type: Type.STRING, description: 'Frequency of sales reporting ingestion.' },
+      blockchainTag: { type: Type.STRING, description: 'Blockchain provenance tag config.' },
+      preflightCheck: { type: Type.STRING, description: 'Pre-flight check mode.' }
+    },
+    required: ['releaseId', 'ddexProfile', 'e2eScope'],
+  }
+};
+
 export const sendMessageToGemini = async (
   history: ChatMessage[],
   currentText: string,
@@ -176,7 +198,8 @@ export const sendMessageToGemini = async (
     manageRolloutTool, 
     updateAssetMetadataTool,
     regenerateAssetIdTool,
-    manageAccessibilityTool
+    manageAccessibilityTool,
+    executeAuraDistributionTool
   ]}];
 
   try {

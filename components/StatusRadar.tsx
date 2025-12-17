@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { 
-  Activity, Globe, Lock, Music, Target, Zap, AlertTriangle, FileText, Tag, User, Hash, Sparkles, Mic2, TrendingUp, ShieldCheck, Accessibility, Wifi, CreditCard, Unlock, ShieldAlert
+  Activity, Globe, Lock, Music, Target, Zap, AlertTriangle, FileText, Tag, User, Hash, Sparkles, Mic2, TrendingUp, ShieldCheck, Accessibility, Wifi, CreditCard, Unlock, ShieldAlert, Terminal
 } from 'lucide-react';
 import { ContextData, SystemLog } from '../types';
 
@@ -291,7 +291,7 @@ const AudioVisualizer = () => {
 };
 
 // --- System Log Terminal ---
-const SystemTerminal = ({ logs }: { logs: SystemLog[] }) => {
+const SystemTerminal = ({ logs, activeCLI }: { logs: SystemLog[], activeCLI?: boolean }) => {
     const bottomRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -317,8 +317,8 @@ const SystemTerminal = ({ logs }: { logs: SystemLog[] }) => {
             </div>
             {/* Blinking Cursor */}
             <div className="h-4 flex items-center gap-1 border-t border-slate-800/50 pt-1 mt-1">
-                <span className="text-green-500 animate-pulse">_</span>
-                <span className="text-slate-600">DAEMON ACTIVE</span>
+                <span className={`${activeCLI ? 'text-orange-500' : 'text-green-500'} animate-pulse`}>_</span>
+                <span className="text-slate-600">{activeCLI ? 'AURA-CLI CONNECTED' : 'DAEMON ACTIVE'}</span>
             </div>
         </div>
     );
@@ -344,6 +344,7 @@ const getA11YColor = (status: string) => {
 export const StatusRadar: React.FC<Props> = ({ data, onOpenPayout, onOpenProfile, userDisplayName }) => {
   const isRolloutActive = data.rolloutState.status !== 'Idle' && data.rolloutState.status !== 'Completed';
   const isHalted = data.rolloutState.status === 'Halted';
+  const auraActive = data.auraProfile?.active;
 
   return (
     <div className="space-y-4 w-full">
@@ -366,6 +367,20 @@ export const StatusRadar: React.FC<Props> = ({ data, onOpenPayout, onOpenProfile
 
       {/* Primary Visualization: Vector Radar */}
       <VectorRadar data={data} />
+
+      {/* AURA-DDEX-CLI Status Indicator */}
+      {auraActive && (
+          <div className="bg-orange-950/20 border border-orange-500/50 rounded-lg p-2 flex items-center gap-3 animate-pulse">
+              <div className="p-1 bg-orange-900/50 rounded border border-orange-500/50">
+                  <Terminal className="w-4 h-4 text-orange-500" />
+              </div>
+              <div className="flex-1">
+                  <div className="text-[9px] text-orange-400 font-mono uppercase tracking-widest">AURA-DDEX-CLI</div>
+                  <div className="text-xs text-orange-200 font-bold">{data.auraProfile.releaseId}</div>
+              </div>
+              <div className="text-[10px] text-slate-400 font-mono px-2">{data.auraProfile.e2eScope}</div>
+          </div>
+      )}
 
       {/* Metrics Pills */}
       <div className="grid grid-cols-2 gap-2">
@@ -479,7 +494,7 @@ export const StatusRadar: React.FC<Props> = ({ data, onOpenPayout, onOpenProfile
       </div>
 
       {/* Live System Log */}
-      <SystemTerminal logs={data.systemLogs} />
+      <SystemTerminal logs={data.systemLogs} activeCLI={auraActive} />
     </div>
   );
 };
