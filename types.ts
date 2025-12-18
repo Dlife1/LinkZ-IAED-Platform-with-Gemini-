@@ -12,7 +12,7 @@ export interface AssetMetadata {
 export interface SystemLog {
   id: string;
   text: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'alpha';
   timestamp: number;
 }
 
@@ -30,6 +30,36 @@ export interface AuraProfile {
   blockchainTag?: string;
 }
 
+export interface StrategicBriefing {
+  id: string;
+  title: string;
+  summary: string;
+  audioBase64?: string;
+  timestamp: number;
+}
+
+export interface NegotiationState {
+  counterparty: string;
+  dealType: 'Sync' | 'Brand' | 'Collaboration';
+  currentOffer: string;
+  status: 'Negotiating' | 'Signed' | 'Rejected';
+}
+
+export interface MarketHotspot {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+  intensity: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface ViralSignal {
+  shazamVelocity: number;
+  tikTokMomentum: number;
+  location?: string;
+  hotspots?: MarketHotspot[];
+}
+
 export interface ContextData {
   currentAssetId: string;
   assetName: string;
@@ -38,6 +68,9 @@ export interface ContextData {
   ddexCompliance: 'Verified' | 'Pending' | 'Failed';
   srmStatus: 'Secure' | 'Pending' | 'Flagged';
   pitchingStatus: 'Idle' | 'Active (Editorial)' | 'Review';
+  activeMission: string;
+  viralStatus: 'Stable' | 'Rising' | 'Spiking';
+  viralSignal?: ViralSignal;
   rolloutState: {
     status: 'Idle' | 'Active' | 'Halted' | 'Completed';
     percentage: number;
@@ -48,14 +81,8 @@ export interface ContextData {
   projectedEquity: number;
   lockState: 'LOCKED' | 'ARMED' | 'DEPLOYED';
   auraProfile: AuraProfile;
-}
-
-export interface MessagePart {
-  text?: string;
-  inlineData?: {
-    mimeType: string;
-    data: string;
-  };
+  briefings: StrategicBriefing[];
+  activeNegotiation?: NegotiationState;
 }
 
 export interface MandateDetails {
@@ -71,13 +98,15 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
   attachments?: {
-    image?: string; // base64
-    audio?: string; // base64
+    image?: string;
+    audio?: string;
     imageName?: string;
     audioName?: string;
   };
   mandate?: MandateDetails;
+  complianceReport?: ComplianceReportData;
   dltHash?: string;
+  briefing?: StrategicBriefing;
 }
 
 export interface UploadedFile {
@@ -91,7 +120,7 @@ export interface PayoutTransaction {
   id: string;
   amount: number;
   currency: string;
-  destination: string; // e.g. $Cashtag
+  destination: string; 
   status: 'Processing' | 'Completed' | 'Failed';
   timestamp: number;
   hash: string;
@@ -102,7 +131,27 @@ export interface UserProfile {
   artistName: string;
   email: string;
   cashtag: string;
-  totalEarnings: number; // Lifetime earnings
+  totalEarnings: number;
   createdAt: number;
   transactions: PayoutTransaction[];
+}
+
+export interface ComplianceCheck {
+  id: string;
+  label: string;
+  status: 'PASS' | 'FAIL' | 'WARN';
+  details?: string;
+}
+
+export interface ComplianceReportData {
+  status: 'Verified' | 'Non-Compliant' | 'Pending Review';
+  srmStatus: 'Secure' | 'Pending' | 'Flagged';
+  protocolVersion: string;
+  checks: ComplianceCheck[];
+  issues: string[];
+  remediation: string[];
+  auditLog: string[];
+  indemnityHash?: string;
+  ddexXml?: string; 
+  auditTimestamp: number; 
 }

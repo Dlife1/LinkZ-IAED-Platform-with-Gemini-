@@ -1,24 +1,44 @@
 
-import { GoogleGenAI, FunctionDeclaration, Type, Tool } from "@google/genai";
+import { GoogleGenAI, FunctionDeclaration, Type, Tool, Modality } from "@google/genai";
 import { ChatMessage, ContextData, UploadedFile } from "../types";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-// Define the function tool
+const generateStrategicBriefingTool: FunctionDeclaration = {
+  name: 'generateStrategicBriefing',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Generates a high-fidelity strategic audio briefing for the artist.',
+    properties: {
+      title: { type: Type.STRING, description: 'The title of the briefing.' },
+      summary: { type: Type.STRING, description: 'A concise summary of the strategic move.' },
+      voicePrompt: { type: Type.STRING, description: 'The exact text for the TTS engine to read (should be visionary and professional).' }
+    },
+    required: ['title', 'summary', 'voicePrompt'],
+  },
+};
+
+const initiateNegotiationTool: FunctionDeclaration = {
+  name: 'initiateNegotiation',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Initiates an autonomous negotiation mission with a third party.',
+    properties: {
+      counterparty: { type: Type.STRING, description: 'The entity we are negotiating with.' },
+      dealType: { type: Type.STRING, enum: ['Sync', 'Brand', 'Collaboration'] },
+      initialOffer: { type: Type.STRING, description: 'The opening term (e.g., "$50k for Global Sync").' }
+    },
+    required: ['counterparty', 'dealType', 'initialOffer'],
+  }
+};
+
 const issueMandateTool: FunctionDeclaration = {
   name: 'issueMandate',
   parameters: {
     type: Type.OBJECT,
-    description: 'Trigger a strategic deployment mandate when synergy conditions are met.',
+    description: 'Trigger a strategic deployment mandate.',
     properties: {
-      actionName: {
-        type: Type.STRING,
-        description: 'The short name of the action to execute (e.g., "DEPLOY_SMART_CONTRACT", "INITIATE_PITCH").',
-      },
-      urgency: {
-        type: Type.STRING,
-        enum: ['LOW', 'MEDIUM', 'CRITICAL'],
-        description: 'The urgency level of this mandate.',
-      },
+      actionName: { type: Type.STRING },
+      urgency: { type: Type.STRING, enum: ['LOW', 'MEDIUM', 'CRITICAL'] },
     },
     required: ['actionName', 'urgency'],
   },
@@ -28,44 +48,81 @@ const updateComplianceStatusTool: FunctionDeclaration = {
   name: 'updateComplianceStatus',
   parameters: {
     type: Type.OBJECT,
-    description: 'Updates the DDEX compliance and SRM (Strategic Rights Management) status based on asset analysis.',
+    description: 'Updates DDEX/SRM status.',
     properties: {
-      status: {
-        type: Type.STRING,
-        enum: ['Verified', 'Pending', 'Failed'],
-        description: 'The determined compliance status of the asset.',
+      status: { type: Type.STRING, enum: ['Verified', 'Pending', 'Failed'] },
+      srmStatus: { type: Type.STRING, enum: ['Secure', 'Pending', 'Flagged'] },
+      protocolVersion: { type: Type.STRING },
+      checks: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            label: { type: Type.STRING },
+            status: { type: Type.STRING, enum: ['PASS', 'FAIL', 'WARN'] },
+            details: { type: Type.STRING }
+          },
+          required: ['label', 'status']
+        }
       },
-      srmStatus: {
-        type: Type.STRING,
-        enum: ['Secure', 'Pending', 'Flagged'],
-        description: 'The Strategic Rights Management status.',
-      },
-      violationSummary: {
-        type: Type.STRING,
-        description: 'A brief summary of the primary violation if Failed (e.g. "Invalid ISRC format").',
-      }
+      auditLog: { type: Type.ARRAY, items: { type: Type.STRING } },
+      violationSummary: { type: Type.STRING },
+      remediationSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+      ddexXml: { type: Type.STRING }
     },
     required: ['status'],
   },
 };
 
-const manageRolloutTool: FunctionDeclaration = {
-  name: 'manageRollout',
+const runViralOpportunityScanTool: FunctionDeclaration = {
+  name: 'runViralOpportunityScan',
   parameters: {
     type: Type.OBJECT,
-    description: 'Manages the phased distribution rollout protocol.',
+    description: 'Scans global social signals.',
     properties: {
-      action: {
-        type: Type.STRING,
-        enum: ['START', 'UPDATE', 'HALT'],
-        description: 'Action to perform on the rollout.',
-      },
-      percentage: {
-        type: Type.NUMBER,
-        description: 'The target percentage for the rollout (0-100). Required for START and UPDATE.',
+      shazamVelocity: { type: Type.NUMBER },
+      tikTokMomentum: { type: Type.NUMBER },
+      location: { type: Type.STRING },
+      status: { type: Type.STRING, enum: ['Stable', 'Rising', 'Spiking'] },
+      recommendedMission: { type: Type.STRING },
+      hotspots: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            x: { type: Type.NUMBER },
+            y: { type: Type.NUMBER },
+            label: { type: Type.STRING },
+            intensity: { type: Type.STRING, enum: ['LOW', 'MEDIUM', 'HIGH'] }
+          }
+        }
       }
     },
-    required: ['action'],
+    required: ['shazamVelocity', 'tikTokMomentum', 'status']
+  }
+};
+
+const analyzeMarketOpportunityTool: FunctionDeclaration = {
+  name: 'analyzeMarketOpportunity',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Performs deep-scan of market gaps.',
+    properties: {
+      hotspots: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            x: { type: Type.NUMBER },
+            y: { type: Type.NUMBER },
+            label: { type: Type.STRING },
+            intensity: { type: Type.STRING, enum: ['LOW', 'MEDIUM', 'HIGH'] }
+          }
+        }
+      },
+      recommendedMission: { type: Type.STRING }
+    },
+    required: ['hotspots', 'recommendedMission']
   }
 };
 
@@ -73,70 +130,15 @@ const updateAssetMetadataTool: FunctionDeclaration = {
   name: 'updateAssetMetadata',
   parameters: {
     type: Type.OBJECT,
-    description: 'Updates specific metadata fields for the current asset to ensure DDEX compliance or store analysis results.',
+    description: 'Updates asset metadata.',
     properties: {
-      title: { type: Type.STRING, description: 'The track title.' },
-      artist: { type: Type.STRING, description: 'The performing artist.' },
-      isrc: { type: Type.STRING, description: 'The International Standard Recording Code.' },
-      label: { type: Type.STRING, description: 'The record label.' },
-      genre: { type: Type.STRING, description: 'The primary genre.' },
-      mood: { type: Type.STRING, description: 'The mood of the track (e.g. Energetic, Melancholic).' },
-      productionQuality: { type: Type.STRING, description: 'Assessment of production quality (e.g. Demo, Professional, High Fidelity).' },
+      title: { type: Type.STRING },
+      artist: { type: Type.STRING },
+      isrc: { type: Type.STRING },
+      label: { type: Type.STRING },
+      genre: { type: Type.STRING },
     },
-    required: [], // All optional to allow partial updates
-  }
-};
-
-const regenerateAssetIdTool: FunctionDeclaration = {
-  name: 'regenerateAssetId',
-  parameters: {
-    type: Type.OBJECT,
-    description: 'Regenerates the Asset ID if the current one is invalid or upon user request.',
-    properties: {
-      reason: {
-        type: Type.STRING,
-        description: 'Reason for regeneration (e.g., "Invalid Format", "User Request").',
-      }
-    },
-    required: [],
-  }
-};
-
-const manageAccessibilityTool: FunctionDeclaration = {
-  name: 'manageAccessibility',
-  parameters: {
-    type: Type.OBJECT,
-    description: 'Manages the Accessible Screen Reader API and WCAG compliance checks.',
-    properties: {
-      action: {
-        type: Type.STRING,
-        enum: ['ACTIVATE_API', 'RUN_AUDIT'],
-        description: 'Activate the Screen Reader API or run a WCAG compliance audit.',
-      },
-    },
-    required: ['action'],
-  }
-};
-
-// New Tool for AURA-DDEX-CLI
-const executeAuraDistributionTool: FunctionDeclaration = {
-  name: 'executeAuraDistribution',
-  parameters: {
-    type: Type.OBJECT,
-    description: 'Executes the AURA-DDEX-CLI distribution workflow. Maps command flags to E2E distribution parameters.',
-    properties: {
-      releaseId: { type: Type.STRING, description: 'Unique release identifier (e.g. R_2025_...)' },
-      assetSource: { type: Type.STRING, description: 'SFTP path for assets.' },
-      ddexProfile: { type: Type.STRING, description: 'DDEX standard profile string.' },
-      e2eScope: { type: Type.STRING, description: 'Distribution target scope (e.g. GLOBAL_TIER1).' },
-      scheduleStrategy: { type: Type.STRING, description: 'Release schedule strategy (e.g. SMART_WATERFALL).' },
-      metadataAudit: { type: Type.STRING, description: 'Audit mode (e.g. ENABLE:AI_SEMANTIC_CHECK).' },
-      rdrSrmCommit: { type: Type.BOOLEAN, description: 'Commit to Repertoire & Rights systems.' },
-      reportingFrequency: { type: Type.STRING, description: 'Frequency of sales reporting ingestion.' },
-      blockchainTag: { type: Type.STRING, description: 'Blockchain provenance tag config.' },
-      preflightCheck: { type: Type.STRING, description: 'Pre-flight check mode.' }
-    },
-    required: ['releaseId', 'ddexProfile', 'e2eScope'],
+    required: [], 
   }
 };
 
@@ -147,78 +149,81 @@ export const sendMessageToGemini = async (
   attachments: { image?: UploadedFile, audio?: UploadedFile }
 ) => {
   const apiKey = process.env.API_KEY || "";
-  
-  if (!apiKey) {
-    console.warn("API Key is missing. Requests will likely fail.");
-  }
-  
-  // We initialize new client per request to ensure latest config (e.g. key from context if we had it)
   const ai = new GoogleGenAI({ apiKey });
+  
+  const formattedHistory = history.filter(m => m.role !== 'system').map(m => ({ 
+    role: m.role === 'model' ? 'model' : 'user', 
+    parts: [{ text: m.text }] 
+  }));
 
-  // Filter history to exclude system messages or client-only metadata
-  // We need to format strictly for the SDK
-  const formattedHistory = history
-    .filter(m => m.role !== 'system')
-    .map(m => {
-      const parts: any[] = [{ text: m.text }];
-      // Note: In a real app, we'd persist the inlineData in history if supported by storage cost,
-      // or rely on the context. For now, we only send current attachments.
-      return {
-        role: m.role === 'model' ? 'model' : 'user',
-        parts
-      };
-    });
-
-  const currentParts: any[] = [{ 
-    text: `[SYSTEM_DATA: ${JSON.stringify(contextData)}]\n\nUSER_QUERY: ${currentText}` 
-  }];
+  const currentParts: any[] = [
+    { text: `[IAED_CORE_V3.5_TELEMETRY: ${JSON.stringify(contextData)}]\n\nUSER_QUERY: ${currentText}` }
+  ];
 
   if (attachments.image) {
-    currentParts.push({
-      inlineData: {
-        mimeType: attachments.image.mimeType,
-        data: attachments.image.base64
-      }
+    currentParts.push({ 
+      inlineData: { 
+        mimeType: attachments.image.mimeType, 
+        data: attachments.image.base64 
+      } 
     });
   }
 
   if (attachments.audio) {
-    currentParts.push({
-      inlineData: {
-        mimeType: attachments.audio.mimeType,
-        data: attachments.audio.base64
-      }
+    currentParts.push({ 
+      inlineData: { 
+        mimeType: attachments.audio.mimeType, 
+        data: attachments.audio.base64 
+      } 
     });
   }
 
-  // Define tools configuration
   const tools: Tool[] = [{ functionDeclarations: [
+    generateStrategicBriefingTool,
+    initiateNegotiationTool,
     issueMandateTool, 
     updateComplianceStatusTool, 
-    manageRolloutTool, 
     updateAssetMetadataTool,
-    regenerateAssetIdTool,
-    manageAccessibilityTool,
-    executeAuraDistributionTool
+    runViralOpportunityScanTool,
+    analyzeMarketOpportunityTool
   ]}];
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        ...formattedHistory,
-        { role: 'user', parts: currentParts }
-      ],
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        tools: tools,
-        temperature: 0.4,
+      model: 'gemini-3-pro-preview',
+      contents: [ ...formattedHistory, { role: 'user', parts: currentParts } ],
+      config: { 
+        systemInstruction: SYSTEM_INSTRUCTION, 
+        tools: tools, 
+        temperature: 0.5,
+        thinkingConfig: { thinkingBudget: 8000 } 
       }
     });
-
     return response;
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw error;
   }
+};
+
+export const generateAudioBriefing = async (text: string): Promise<string> => {
+    const apiKey = process.env.API_KEY || "";
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text }] }],
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: 'Kore' },
+                },
+            },
+        },
+    });
+
+    const audioBase64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!audioBase64) throw new Error("Audio generation failed");
+    return audioBase64;
 };
